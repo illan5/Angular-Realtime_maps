@@ -18,6 +18,7 @@ export class MapaComponent implements OnInit {
   mapa: mapboxgl.Map;
   // lugares: Lugar[] = [];
   lugares: RespMarcadores = {};
+  markersMapBox: { [id: string]: mapboxgl.Marker } = {};
 
   constructor(
     private http: HttpClient,
@@ -39,15 +40,16 @@ export class MapaComponent implements OnInit {
 
     // marcador-nuevo
     this.wsService.listen('marcador-nuevo')
-      .subscribe( (marcador: Lugar) => {
-        console.log('Socket');
-        console.log(marcador);
-        this.agregarMarcador( marcador );
-      })
+      .subscribe( (marcador: Lugar) =>  this.agregarMarcador( marcador ));
 
     // marcador-mover
 
     // marcador-borrar
+    this.wsService.listen('marcador-borrar')
+      .subscribe( (id: string) =>  {
+        this.markersMapBox[id].remove();
+        delete this.markersMapBox[id];
+      });
   }
 
   crearMapa() {
@@ -105,8 +107,9 @@ export class MapaComponent implements OnInit {
       marker.remove();
 
       //TODO: Eliminar mediante socket
+      this.wsService.emit( 'marcador-borrar', marcador.id );
     })
-
+    this.markersMapBox[ marcador.id ] = marker;
   }
 
   crearMarcador() {
