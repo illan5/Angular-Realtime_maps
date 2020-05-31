@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import * as mapboxgl from 'mapbox-gl';
 import { Lugar } from '../../interfaces/interfaces';
 import { HttpClient } from '@angular/common/http';
+import { WebsocketService } from '../../services/websocket.service';
 
 interface RespMarcadores {
  [ key: string ]: Lugar 
@@ -19,23 +20,30 @@ export class MapaComponent implements OnInit {
   lugares: RespMarcadores = {};
 
   constructor(
-    private http: HttpClient
+    private http: HttpClient,
+    private wsService: WebsocketService
   ) { }
 
   ngOnInit(): void {
 
     this.http.get<RespMarcadores>('http://localhost:5000/mapa')
       .subscribe( lugares => {
-        console.log(lugares);
+        //console.log(lugares);
         this.lugares = lugares;
         this.crearMapa();
       })
-    this.crearMapa();
+    this.escucharSockets();
   }
 
   escucharSockets(){
 
     // marcador-nuevo
+    this.wsService.listen('marcador-nuevo')
+      .subscribe( (marcador: Lugar) => {
+        console.log('Socket');
+        console.log(marcador);
+        this.agregarMarcador( marcador );
+      })
 
     // marcador-mover
 
@@ -87,7 +95,7 @@ export class MapaComponent implements OnInit {
 
     marker.on('drag', () => {
       const lngLat = marker.getLngLat();
-      console.log(lngLat);
+      //console.log(lngLat);
 
       //TODO: Crear evento al mover el marcador
 
@@ -111,6 +119,9 @@ export class MapaComponent implements OnInit {
     }
 
     this.agregarMarcador( customMarker );
+
+    // Emitir marcador-nuevo
+    this.wsService.emit('marcador-nuevo', customMarker );
   }
 
 }
