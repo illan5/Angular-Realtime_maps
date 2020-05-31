@@ -1,6 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import * as mapboxgl from 'mapbox-gl';
 import { Lugar } from '../../interfaces/interfaces';
+import { HttpClient } from '@angular/common/http';
+
+interface RespMarcadores {
+ [ key: string ]: Lugar 
+}
 
 @Component({
   selector: 'app-mapa',
@@ -10,31 +15,21 @@ import { Lugar } from '../../interfaces/interfaces';
 export class MapaComponent implements OnInit {
 
   mapa: mapboxgl.Map;
-  lugares: Lugar[] = [{
-    id: '1',
-    nombre: 'Jose',
-    lng: -75.75512993582937,
-    lat: 45.349977429009954,
-    color: '#dd8fee'
-  },
-  {
-    id: '2',
-    nombre: 'Hulio',
-    lng: -75.75195645527508, 
-    lat: 45.351584045823756,
-    color: '#790af0'
-  },
-  {
-    id: '3',
-    nombre: 'Ana',
-    lng: -75.75900589557777, 
-    lat: 45.34794635758547,
-    color: '#19884b'
-  }];
+  // lugares: Lugar[] = [];
+  lugares: RespMarcadores = {};
 
-  constructor() { }
+  constructor(
+    private http: HttpClient
+  ) { }
 
   ngOnInit(): void {
+
+    this.http.get<RespMarcadores>('http://localhost:5000/mapa')
+      .subscribe( lugares => {
+        console.log(lugares);
+        this.lugares = lugares;
+        this.crearMapa();
+      })
     this.crearMapa();
   }
 
@@ -57,7 +52,7 @@ export class MapaComponent implements OnInit {
       zoom: 15.8
     });
 
-    for (const marcador of this.lugares ){
+    for (const [id, marcador] of Object.entries(this.lugares) ){
       this.agregarMarcador( marcador );
     }
   }
